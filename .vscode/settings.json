@@ -1,0 +1,5 @@
+{
+  "yaml.schemas": {
+    "./schemas/appConfig.schema.json": "appConfig.yml"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AppConfig",
+  "description": "应用级配置文件，包含路径、日志等配置",
+  "type": "object",
+  "properties": {
+    "paths": {
+      "type": "object",
+      "description": "路径相关配置",
+      "properties": {
+        "data_dir": {
+          "type": "string",
+          "description": "图像数据目录路径"
+        },
+        "ground_truth_dir": {
+          "type": "string",
+          "description": "Ground truth 数据目录路径"
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "输出结果目录路径"
+        },
+        "image_pairs": {
+          "type": "array",
+          "description": "图像对列表",
+          "items": {
+            "type": "object",
+            "properties": {
+              "src_path": {
+                "type": "string",
+                "description": "第一张源图像的文件名"
+              },
+              "dst_path": {
+                "type": "string",
+                "description": "第二张目标图像的文件名"
+              },
+              "gt_path": {
+                "type": "string",
+                "description": "对应的 ground truth 文件名"
+              }
+            },
+            "required": ["src_path", "dst_path", "gt_path"]
+          }
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "日志行为配置",
+      "properties": {
+        "log_dir": {
+          "type": "string",
+          "description": "日志输出目录路径"
+        },
+        "level": {
+          "type": "string",
+          "description": "日志级别，可选 DEBUG/INFO/WARNING/ERROR/CRITICAL",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        },
+        "retention": {
+          "type": "string",
+          "description": "日志文件保留时间，支持自然语言格式（如 '7 days'）"
+        },
+        "compression": {
+          "type": "string",
+          "description": "日志文件压缩格式",
+          "enum": ["zip", "gz", "tar"]
+        },
+        "file_pattern": {
+          "type": "string",
+          "description": "日志文件名模式，使用 loguru 时间格式化（如 '{time:YYYY-MM-DD}.log'）"
+        }
+      }
+    }
+  }
+}

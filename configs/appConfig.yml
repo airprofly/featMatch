@@ -1,0 +1,21 @@
+paths:
+  data_dir: ./data
+  ground_truth_dir: ./ground_truth
+  output_dir: ./outputs
+  image_pairs:
+    - src_path: 1a_notredame.jpg
+      dst_path: 1b_notredame.jpg
+      gt_path: notredame.pkl
+    - src_path: 2a_rushmore.jpg
+      dst_path: 2b_rushmore.jpg
+      gt_path: rushmore.pkl
+    - src_path: 3a_gaudi.jpg
+      dst_path: 3b_gaudi.jpg
+      gt_path: gaudi.pkl
+
+logging:
+  log_dir: ./outputs/logs
+  level: DEBUG
+  retention: 7 days
+  compression: zip
+  file_pattern: "{time:YYYY-MM-DD}.log"
