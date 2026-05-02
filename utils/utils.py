@@ -1,14 +1,10 @@
-from email.mime import image
 from pathlib import Path
-import pickle
-import sys
 
-from matplotlib import pyplot as plt, scale
+from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
-from scipy.__config__ import show
 
 
 def load_image(image_path: str | Path) -> NDArray[np.float32]:
@@ -46,11 +42,15 @@ def show_image(axis: Axes, image: NDArray[np.floating], title: str) -> None:
         image (NDArray[np.floating]): The image array to display.
         title (str): The title for the image.
     """
-    axis.imshow(np.clip(image, 0, 1))
+    # 使用 'gray' 色图确保灰度图像正确显示，RGB图像不受影响
+    axis.imshow(np.clip(image, 0, 1), cmap="gray")
     axis.set_title(title)
     axis.axis("off")
 
-def resize_image(image: NDArray[np.floating], new_size: tuple[int, int]) -> NDArray[np.floating]:
+
+def resize_image(
+    image: NDArray[np.floating], new_size: tuple[int, int]
+) -> NDArray[np.floating]:
     """
     Resize an image to the specified new size.
 
@@ -67,16 +67,68 @@ def resize_image(image: NDArray[np.floating], new_size: tuple[int, int]) -> NDAr
     return resized_image
 
 
+def rgb2gray(image: NDArray[np.floating]) -> NDArray[np.floating]:
+    """
+    Convert an RGB image to grayscale.
+
+    Args:
+        image (NDArray[np.floating]): The input RGB image array with shape (H, W, 3) and pixel values in the range [0, 1].
+
+    Returns:
+        NDArray[np.floating]: The output grayscale image array with shape (H, W) and pixel values in the range [0, 1].
+    """
+    if image.ndim == 2:  # Already grayscale
+        return image
+    if image.ndim == 3 and image.shape[2] == 3:  # RGB to Grayscale
+        c = [0.2989, 0.5870, 0.1140]  # Standard weights for RGB to grayscale conversion
+        return np.dot(image[..., :3], c)  # Apply the weights to convert to grayscale
+    else:
+        raise ValueError("Input image must be either a grayscale or RGB image.")
+
+
 if __name__ == "__main__":
-    from configs.appConfig import APP_CONFIG
+    from configs import APP_CONFIG
+    from loguru import logger
+    from torchvision.transforms import ToTensor, transforms
+
     scale_factor: float = 0.5
     image_a = load_image(APP_CONFIG.paths.image_pairs[0].src_path)
     image_b = load_image(APP_CONFIG.paths.image_pairs[0].dst_path)
-    resized_image_a = resize_image(image_a, (int(image_a.shape[1] * scale_factor), int(image_a.shape[0] * scale_factor)))
-    resized_image_b = resize_image(image_b, (int(image_b.shape[1] * scale_factor), int(image_b.shape[0] * scale_factor)))
-    print(resized_image_a.shape, resized_image_b.shape)
+    logger.info(
+        f"Original Image A shape: {image_a.shape}, Image B shape: {image_b.shape}"
+    )
+    resized_image_a = resize_image(
+        image_a,
+        (int(image_a.shape[1] * scale_factor), int(image_a.shape[0] * scale_factor)),
+    )
+    resized_image_b = resize_image(
+        image_b,
+        (int(image_b.shape[1] * scale_factor), int(image_b.shape[0] * scale_factor)),
+    )
+    logger.info(
+        f"Resized Image A shape: {resized_image_a.shape}, Image B shape: {resized_image_b.shape}"
+    )
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    # plt.ion()
+    plt.ion()
     show_image(axes[0], resized_image_a, "Resized Image A")
     show_image(axes[1], resized_image_b, "Resized Image B")
-    plt.show()
+    image_a_gray = rgb2gray(resized_image_a)
+    image_b_gray = rgb2gray(resized_image_b)
+    logger.info(
+        f"Grayscale Image A shape: {image_a_gray.shape}, Image B shape: {image_b_gray.shape}"
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    show_image(axes[0], image_a_gray, "Grayscale Image A")
+    show_image(axes[1], image_b_gray, "Grayscale Image B")
+    transform = transforms.Compose(
+        [
+            ToTensor(),
+            transforms.Lambda(lambda x: x.unsqueeze(0)),  # Add batch dimension
+        ]
+    )
+    image_a_tensor = transform(resized_image_a)
+    image_b_tensor = transform(resized_image_b)
+    logger.info(
+        f"Tensor Image A shape: {image_a_tensor.shape}, Image B shape: {image_b_tensor.shape}"
+    )
+    plt.pause(5)
