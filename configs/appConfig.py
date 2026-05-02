@@ -102,16 +102,14 @@ class LoggingConfig:
     Attributes:
         log_dir (str | Path): 日志输出目录, 默认 ./outputs/logs, 支持字符串或 Path 对象输入.
         level (str): 日志级别, 默认 "DEBUG", 可选 "DEBUG"/"INFO"/"WARNING"/"ERROR"/"CRITICAL".
-        retention (str): 日志文件保留时间, 默认 "7 days", 支持自然语言格式.
-        compression (str): 日志文件压缩格式, 默认 "zip", 可选 "zip"/"gz"/"tar".
-        file_pattern (str): 日志文件名模式, 默认 "{time:YYYY-MM-DD}.log", 使用 loguru 时间格式化.
+        retention (str): 日志文件保留时间, 默认 "7 days", 支持自然语言格式, 超过此时间的日志将被自动删除.
+        file_pattern (str): 日志文件名模式, 默认 "{time:YYYY-MM-DD_HH-mm-ss}.log", 使用 loguru 时间格式化, 包含时分秒避免同一天多次运行冲突.
     """
 
     log_dir: str | Path = Path("./outputs/logs")
     level: str = "DEBUG"
     retention: str = "7 days"
-    compression: str = "zip"
-    file_pattern: str = "{time:YYYY-MM-DD}.log"
+    file_pattern: str = "{time:YYYY-MM-DD_HH-mm-ss}.log"
 
     def __post_init__(self) -> None:
         if isinstance(self.log_dir, str):
@@ -161,14 +159,15 @@ class AppConfig:
 
 
 # 全局配置实例 (模块导入时加载一次, 全局唯一)
-# 其他模块通过 `from configs.app_config import APP_CONFIG` 导入使用
+# 其他模块通过 `from configs.appConfig import APP_CONFIG` 导入使用
 # _temp_dir = Path(__file__).parent
-# _yaml_path = _temp_dir.joinpath("app_config.yml")
-_yaml_path = Path("./configs/app_config.yml")
+# _yaml_path = _temp_dir.joinpath("appConfig.yml")
+_yaml_path = Path("./configs/appConfig.yml")
 try:
     APP_CONFIG = AppConfig.load_from_yaml(_yaml_path)
+    print(f"\n\033[1;92m[SUCCESS] 配置文件加载成功: {_yaml_path}\033[0m\n")
 except ValueError as e:
-    print(f"\033[1;93m[WARNING] 加载 YAML 失败, 使用默认配置: {e}\033[0m")
+    print(f"\n\033[1;93m[WARNING] 加载 YAML 失败, 使用默认配置: {e}\033[0m\n")
     APP_CONFIG = AppConfig()
 
 if __name__ == "__main__":

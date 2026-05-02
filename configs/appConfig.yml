@@ -17,5 +17,4 @@ logging:
   log_dir: ./outputs/logs
   level: DEBUG
   retention: 7 days
-  compression: zip
-  file_pattern: "{time:YYYY-MM-DD}.log"
+  file_pattern: "{time:YYYY-MM-DD_HH-mm-ss}.log"
