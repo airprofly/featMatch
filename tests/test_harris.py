@@ -1,6 +1,6 @@
 import torch
 
-from models.layers.layers import ChannelProductLayer, CornerResponseLayer, ImageGradientsLayer, NMSLayer, SecondMomentMatrixLayer
+from models.harrisNet import ChannelProductLayer, CornerResponseLayer, ImageGradientsLayer, NMSLayer, SecondMomentMatrixLayer
 
 
 def test_ImageGradientsLayer():

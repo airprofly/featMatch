@@ -1,7 +1,97 @@
+from typing import Tuple
+
 import numpy as np
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
+
+
+class HarrisNet(nn.Module):
+    """
+    Implement Harris corner detector (See Szeliski 4.1.1) in pytorch by
+    sequentially stacking several layers together.
+
+    Your task is to implement the combination of pytorch module custom layers
+    to perform Harris Corner detector.
+
+    Recall that R = det(M) - alpha(trace(M))^2
+    where M = [S_xx S_xy;
+               S_xy  S_yy],
+          S_xx = Gk * I_xx
+          S_yy = Gk * I_yy
+          S_xy  = Gk * I_xy,
+    and * is a convolutional operation over a Gaussian kernel of size (k, k).
+    (You can verify that this is equivalent to taking a (Gaussian) weighted sum
+    over the window of size (k, k), see how convolutional operation works here:
+    http://cs231n.github.io/convolutional-networks/)
+
+    Ix, Iy are simply image derivatives in x and y directions, respectively.
+
+    You may find the Pytorch function nn.Conv2d() helpful here.
+    """
+
+    def __init__(self):
+        """
+        Create a nn.Sequential() network, using 5 specific layers (not in this
+        order):
+          - SecondMomentMatrixLayer: Compute S_xx, S_yy and S_xy, the output is
+            a tensor of size (num_image, 3, width, height)
+          - ImageGradientsLayer: Compute image gradients Ix Iy. Can be
+            approximated by convolving with Sobel filter.
+          - NMSLayer: Perform nonmaximum suppression, the output is a tensor of
+            size (num_image, 1, width, height)
+          - ChannelProductLayer: Compute I_xx, I_yy and I_xy, the output is a
+            tensor of size (num_image, 3, width, height)
+          - CornerResponseLayer: Compute R matrix, the output is a tensor of
+            size (num_image, 1, width, height)
+
+        To help get you started, we give you the ImageGradientsLayer layer to
+        compute Ix and Iy. You will need to implement all the other layers. You
+        will need to combine all the layers together using nn.Sequential, where
+        the output of one layer will be the input to the next layer, and so on
+        (see HarrisNet diagram). You'll also need to find the right order since
+        the above layer list is not sorted ;)
+
+        Args:
+        -   None
+
+        Returns:
+        -   None
+        """
+        super(HarrisNet, self).__init__()
+
+        image_gradients_layer = ImageGradientsLayer()
+        channel_product_layer = ChannelProductLayer()
+        second_moment_matrix_layer = SecondMomentMatrixLayer()
+        corner_response_layer = CornerResponseLayer()
+        nms_layer = NMSLayer()
+
+        model = torch.nn.Sequential(
+            image_gradients_layer,
+            channel_product_layer,
+            second_moment_matrix_layer,
+            corner_response_layer,
+            nms_layer,
+        )
+        self.net = model
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass of HarrisNet network. We will only test with 1
+        image at a time, and the input image will have a single channel.
+
+        Args:
+        -   x: input Tensor of shape (num_image, channel, height, width)
+
+        Returns:
+        -   output: output of HarrisNet network,
+            (num_image, 1, height, width) tensor
+
+        """
+        assert x.dim() == 4, "Input should have 4 dimensions. Was {}".format(x.dim())
+
+        return self.net(x)
+
 
 """
 Image gradients are needed for both SIFT and the Harris Corner Detector, so we
@@ -22,18 +112,8 @@ def get_sobel_xy_parameters() -> torch.nn.Parameter:
     Returns:
         kernel: Torch parameter representing (2, 1, 3, 3) conv filters
     """
-    Sobel_x = (
-        torch.Tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
-        .unsqueeze(0)
-        .unsqueeze(0)
-        .float()
-    )
-    Sobel_y = (
-        torch.Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-        .unsqueeze(0)
-        .unsqueeze(0)
-        .float()
-    )
+    Sobel_x = torch.Tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).unsqueeze(0).unsqueeze(0).float()
+    Sobel_y = torch.Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).unsqueeze(0).unsqueeze(0).float()
     kernel = nn.Parameter(torch.cat((Sobel_x, Sobel_y)))
     return kernel
 
@@ -62,6 +142,7 @@ def get_gaussian_kernel(ksize: int = 7, sigma: float = 5) -> torch.nn.Parameter:
     kernel = np.outer(gauss_1d, gauss_1d) / total**2
     kernel = nn.Parameter(torch.from_numpy(kernel).float())
     return kernel
+
 
 class ChannelProductLayer(torch.nn.Module):
     """
@@ -99,6 +180,7 @@ class ChannelProductLayer(torch.nn.Module):
             I_xy = torch.mul(image_gx, image_gy).unsqueeze(0)
             output[i] = torch.cat((I_xx, I_yy, I_xy))
         return output
+
 
 class SecondMomentMatrixLayer(torch.nn.Module):
     """
@@ -164,6 +246,7 @@ class SecondMomentMatrixLayer(torch.nn.Module):
             output[i][2] = S_xy
         return output
 
+
 class CornerResponseLayer(torch.nn.Module):
     """
     Compute R matrix.
@@ -209,6 +292,7 @@ class CornerResponseLayer(torch.nn.Module):
             R = det - self.alpha * (trace**2)
             output[i] = R
         return output
+
 
 class NMSLayer(torch.nn.Module):
     """
@@ -300,3 +384,120 @@ class ImageGradientsLayer(torch.nn.Module):
             tensor for Ix and Iy, respectively.
         """
         return self.conv2d(x)
+
+
+def get_interest_points(image: torch.Tensor, num_points: int = 4500) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Function to return top most N x,y points with the highest confident corner
+    score. Note that the return type should be a tensor. Also make sure to
+    sort them in order of confidence!
+
+    (Potentially) useful functions: torch.nonzero, torch.masked_select,
+    torch.argsort
+
+    Args:
+    -   image: A tensor of shape (b,c,m,n). We will provide an image of
+        (c = 1) for grayscale image.
+
+    Returns:
+    -   x: A tensor array of shape (N,) containing x-coordinates of
+        interest points
+    -   y: A tensor array of shape (N,) containing y-coordinates of
+        interest points
+    -   confidences (optional): tensor array of dim (N,) containing the
+        strength of each interest point
+    """
+
+    # We initialize the Harris detector here, you'll need to implement the
+    # HarrisNet() class
+    harris_detector = HarrisNet()
+
+    # The output of the detector is an R matrix of the same size as image,
+    # indicating the corner score of each pixel. After non-maximum suppression,
+    # most of R will be 0.
+    R = harris_detector(image)
+
+    _, _, y, x = torch.nonzero(R, as_tuple=True)
+    confidences = R[0, 0, y, x]
+    indices = torch.argsort(confidences, descending=True)
+    x = x[indices]
+    y = y[indices]
+    confidences = torch.tensor(sorted(confidences, reverse=True))
+
+    length = x.shape[0]
+    if length > num_points:
+        x = x[:num_points]
+        y = y[:num_points]
+        confidences = confidences[:num_points]
+    y, x, confidences = remove_border_vals(R, y, x, confidences)
+    return x, y, confidences
+
+
+def remove_border_vals(img, x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Remove interest points that are too close to a border to allow SIFTfeature
+    extraction. Make sure you remove all points where a 16x16 window around
+    that point cannot be formed.
+
+    Args:
+    -   x: Torch tensor of shape (M,)
+    -   y: Torch tensor of shape (M,)
+    -   c: Torch tensor of shape (M,)
+
+    Returns:
+    -   x: Torch tensor of shape (N,), where N <= M (less than or equal after pruning)
+    -   y: Torch tensor of shape (N,)
+    -   c: Torch tensor of shape (N,)
+    """
+    _, _, height, width = img.shape
+    keeped = []
+
+    for i in range(x.shape[0]):
+        if x[i] - 8 > 0 and x[i] + 8 < height and y[i] - 8 > 0 and y[i] + 8 < width:
+            keeped.append(i)
+    length = x.shape[0]
+    x = torch.tensor([x[i] for i in range(length) if i in keeped])
+    y = torch.tensor([y[i] for i in range(length) if i in keeped])
+    c = torch.tensor([c[i] for i in range(length) if i in keeped])
+    return x, y, c
+
+
+if __name__ == "__main__":
+    from matplotlib import pyplot as plt
+
+    from configs import APP_CONFIG
+    from utils.utils import load_image, rgb2gray, show_interest_points
+
+    # Load images
+    image1 = load_image(APP_CONFIG.paths.image_pairs[0].src_path)
+    image2 = load_image(APP_CONFIG.paths.image_pairs[0].dst_path)
+
+    # Convert to grayscale and create tensors
+    image1_gray = rgb2gray(image1)
+    image2_gray = rgb2gray(image2)
+    image_input1 = torch.from_numpy(image1_gray).unsqueeze(0).unsqueeze(0).float()
+    image_input2 = torch.from_numpy(image2_gray).unsqueeze(0).unsqueeze(0).float()
+
+    # Detect interest points
+    x1, y1, _ = get_interest_points(image_input1)
+    x2, y2, _ = get_interest_points(image_input2)
+
+    # Convert to numpy
+    x1, y1 = x1.detach().numpy(), y1.detach().numpy()
+    x2, y2 = x2.detach().numpy(), y2.detach().numpy()
+
+    # Visualize the interest points
+    c1 = show_interest_points(image1, x1, y1)
+    c2 = show_interest_points(image2, x2, y2)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    axes[0].imshow(c1)
+    axes[0].set_title(f"{len(x1)} corners in image 1")
+    axes[1].imshow(c2)
+    axes[1].set_title(f"{len(x2)} corners in image 2")
+    plt.tight_layout()
+    plt.show()
+
+    print(f"{len(x1)} corners in image 1, {len(x2)} corners in image 2")
+
+    plt.pause(1000)
