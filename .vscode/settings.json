@@ -1,5 +1,13 @@
 {
   "yaml.schemas": {
     "./schemas/appConfig.schema.json": "appConfig.yml"
-  }
+  },
+  "evenBetterToml.schema.associations": {
+    "pyproject.toml": "https://json.schemastore.org/pyproject.json"
+  },
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

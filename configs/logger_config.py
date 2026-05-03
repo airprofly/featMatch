@@ -3,7 +3,7 @@ from typing import cast
 from loguru import logger
 from tqdm import tqdm
 
-from configs.appConfig import  LoggingConfig
+from configs.app_config import  LoggingConfig
 
 
 class LoggerConfig:

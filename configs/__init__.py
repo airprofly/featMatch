@@ -1,12 +1,12 @@
 import os
 from loguru import logger
 
-from .appConfig import AppConfig
-from .loggerConfig import LoggerConfig
-from .pltConfig import PltConfig
+from .app_config import AppConfig
+from .logger_config import LoggerConfig
+from .plt_config import PltConfig
 
 # Global configuration instance (loaded once on module import, globally unique)
-_temp_config_path = os.path.join(os.path.dirname(__file__), "appConfig.yml")
+_temp_config_path = os.path.join(os.path.dirname(__file__), "app_config.yml")
 APP_CONFIG = AppConfig.load_from_yaml(_temp_config_path)
 
 # Initialize logging and plotting systems (executed automatically on module import)
