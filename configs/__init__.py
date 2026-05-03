@@ -14,6 +14,8 @@ logger_config = LoggerConfig(APP_CONFIG.logging)
 plt_config = PltConfig()
 
 # Log successful initialization of the configuration module
-logger.success("\nConfiguration module initialized successfully. AppConfig loaded and logging/plotting systems set up.\n")
+logger.success(
+    "\nConfiguration module initialized successfully. AppConfig loaded and logging/plotting systems set up.\n"
+)
 
 __all__ = ["APP_CONFIG", "LoggerConfig", "PltConfig"]

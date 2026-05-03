@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-
 import yaml
 
 
@@ -40,19 +39,44 @@ class ImagePairConfig:
 
 
 @dataclass(frozen=True)
+class OutputConfig:
+    """Manage output directory structure for results and figures.
+
+    Attributes:
+        output_dir (str | Path): Output root directory, default ./outputs, supports string or Path object input.
+        figure_dir (Path): Pre-computed complete path for figures subdirectory, auto-set in __post_init__.
+    """
+
+    output_dir: str | Path = Path("./outputs")
+    figure_dir: str | Path = str("figures")
+
+    def __post_init__(self) -> None:
+        # Convert output_dir to Path object
+        if isinstance(self.output_dir, str):
+            object.__setattr__(self, "output_dir", Path(self.output_dir))
+
+        # Pre-compute complete path for figures subdirectory (relative: figures)
+        output_dir_path = Path(self.output_dir)
+        concat_figure_dir = output_dir_path.joinpath(self.figure_dir)
+
+        # Store computed complete path as attribute
+        object.__setattr__(self, "figure_dir", concat_figure_dir)
+
+
+@dataclass(frozen=True)
 class PathConfig:
-    """Manage project input/output paths and image pair configuration.
+    """Manage project input paths and image pair configuration.
 
     Attributes:
         data_dir (str | Path): Image data directory, default ./data, supports string or Path object input.
         ground_truth_dir (str | Path): Ground truth data directory, default ./ground_truth, supports string or Path object input.
-        output_dir (str | Path): Output result directory, default ./outputs, supports string or Path object input.
+        output (OutputConfig): Output directory structure and sub-paths configuration.
         image_pairs (list[ImagePairConfig]): List of image pairs, default includes notredame/rushmore/gaudi sets.
     """
 
     data_dir: str | Path = Path("./data")
     ground_truth_dir: str | Path = Path("./ground_truth")
-    output_dir: str | Path = Path("./outputs")
+    output: OutputConfig = field(default_factory=OutputConfig)
     image_pairs: list[ImagePairConfig] = field(
         default_factory=lambda: [
             ImagePairConfig(
@@ -77,8 +101,6 @@ class PathConfig:
             object.__setattr__(self, "data_dir", Path(self.data_dir))
         if isinstance(self.ground_truth_dir, str):
             object.__setattr__(self, "ground_truth_dir", Path(self.ground_truth_dir))
-        if isinstance(self.output_dir, str):
-            object.__setattr__(self, "output_dir", Path(self.output_dir))
 
         # Concatenate data_dir / ground_truth_dir to each image pair filename to generate complete paths
         data_dir = Path(self.data_dir)
@@ -95,9 +117,23 @@ class PathConfig:
 
 
 @dataclass(frozen=True)
-class LoggingConfig:
+class ExperimentConfig:
+    """Experiment hyperparameters for the feature matching pipeline.
+
+    Attributes:
+        scale_factor (float): Resize scale applied to input images.
+        num_points (int): Maximum number of Harris interest points to detect per image.
+        num_vis (int): Number of top matches to visualize and evaluate.
     """
-    Manage logging behavior configuration.
+
+    scale_factor: float = 0.5
+    num_points: int = 4500
+    num_vis: int = 100
+
+
+@dataclass(frozen=True)
+class LoggingConfig:
+    """Manage logging behavior and output directory configuration.
 
     Attributes:
         log_dir (str | Path): Log output directory, default ./outputs/logs, supports string or Path object input.
@@ -127,6 +163,7 @@ class AppConfig:
     """
 
     paths: PathConfig = field(default_factory=PathConfig)
+    experiment: ExperimentConfig = field(default_factory=ExperimentConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
     @classmethod
@@ -147,6 +184,7 @@ class AppConfig:
             ) from e
 
         paths_dict = config_dict.get("paths", {})
+        experiment_dict = config_dict.get("experiment", {})
         logging_dict = config_dict.get("logging", {})
 
         # Process image_pairs list: convert dict list to ImagePairConfig object list
@@ -155,8 +193,12 @@ class AppConfig:
             ImagePairConfig(**pair) for pair in image_pairs_list
         ]
 
+        # Process output config: convert dict to OutputConfig object
+        output_dict = paths_dict.get("output", {})
+        paths_dict["output"] = OutputConfig(**output_dict)
+
         return cls(
             paths=PathConfig(**paths_dict),
+            experiment=ExperimentConfig(**experiment_dict),
             logging=LoggingConfig(**logging_dict),
         )
-

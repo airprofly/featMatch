@@ -1,7 +1,9 @@
 paths:
   data_dir: ./data
   ground_truth_dir: ./ground_truth
-  output_dir: ./outputs
+  output:
+    output_dir: ./outputs
+    figure_dir: figures
   image_pairs:
     - src_path: 1a_notredame.jpg
       dst_path: 1b_notredame.jpg
@@ -12,6 +14,11 @@ paths:
     - src_path: 3a_gaudi.jpg
       dst_path: 3b_gaudi.jpg
       gt_path: gaudi.pkl
+
+experiment:
+  scale_factor: 0.5
+  num_points: 4500
+  num_vis: 100
 
 logging:
   log_dir: ./outputs/logs

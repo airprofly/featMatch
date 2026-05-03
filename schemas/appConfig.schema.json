@@ -16,9 +16,19 @@
           "type": "string",
           "description": "Ground truth 数据目录路径"
         },
-        "output_dir": {
-          "type": "string",
-          "description": "输出结果目录路径"
+        "output": {
+          "type": "object",
+          "description": "输出目录结构配置",
+          "properties": {
+            "output_dir": {
+              "type": "string",
+              "description": "输出根目录路径"
+            },
+            "figure_dir": {
+              "type": "string",
+              "description": "图片子目录名（相对 output_dir）"
+            }
+          }
         },
         "image_pairs": {
           "type": "array",
@@ -60,11 +70,6 @@
         "retention": {
           "type": "string",
           "description": "日志文件保留时间，支持自然语言格式（如 '7 days'）"
-        },
-        "compression": {
-          "type": "string",
-          "description": "日志文件压缩格式",
-          "enum": ["zip", "gz", "tar"]
         },
         "file_pattern": {
           "type": "string",

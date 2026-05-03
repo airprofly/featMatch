@@ -1,6 +1,6 @@
 {
   "yaml.schemas": {
-    "./schemas/appConfig.schema.json": "appConfig.yml"
+    "./schemas/appConfig.schema.json": "app_config.yml"
   },
   "evenBetterToml.schema.associations": {
     "pyproject.toml": "https://json.schemastore.org/pyproject.json"

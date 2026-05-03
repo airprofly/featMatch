@@ -91,6 +91,9 @@ nbdist/
 *.swo
 *~
 
+# claude code
+CLAUDE.md
+
 # =============== 操作系统 ===============
 # macOS
 .DS_Store
