@@ -46,6 +46,7 @@ featMatch/
 │   ├── test_harris.py     #   Harris 各层测试
 │   ├── test_sift.py       #   SIFT 各层测试
 │   └── test_feature_match.py # 距离计算与匹配测试
+├── docs/images/           # 📄 算法流程图
 ├── outputs/figures/       # 📊 输出可视化结果
 ├── main.py                # 🚀 主流水线入口
 ├── environment.yml        # 🔧 Conda 环境配置
@@ -145,6 +146,11 @@ M = \begin{bmatrix} S_{xx} & S_{xy} \\ S_{xy} & S_{yy} \end{bmatrix}
 $$
 
 实现采用 5 层 `nn.Sequential` 流水线：
+
+<a href="docs/images/image.png" target="_blank">
+  <img src="docs/images/image.png" alt="Harris 角点检测流程图" align="center" width="800">
+</a>
+
 1. `ImageGradientsLayer` — Sobel 算子计算 $I_x, I_y$
 2. `ChannelProductLayer` — 计算 $I_{xx}, I_{yy}, I_{xy}$
 3. `SecondMomentMatrixLayer` — 高斯加权求和得到 $S_{xx}, S_{yy}, S_{xy}$
@@ -152,6 +158,10 @@ $$
 5. `NMSLayer` — 非极大值抑制保留局部最大值
 
 ### SIFT 描述子
+
+<a href="docs/images/image2.png" target="_blank">
+  <img src="docs/images/image2.png" alt="SIFT 描述子构建示意图" align="center" width="800">
+</a>
 
 1. 计算每个像素的梯度幅值和方向
 2. 将方向量化为 8 个 bins，构建加权直方图
@@ -168,3 +178,9 @@ $$
 ## 📄 许可证
 
 本项目采用 [MIT 许可证](https://opensource.org/licenses/MIT)。
+
+## 📚 参考文献
+
+1. Harris, C. & Stephens, M. — [*A Combined Corner and Edge Detector*](https://www.bmva-archive.org.uk/bmvc/1988/avc-88-023.pdf), Alvey Vision Conference, 1988.
+2. Lowe, D. G. — [*Distinctive Image Features from Scale-Invariant Keypoints*](https://doi.org/10.1023/B:VISI.0000029664.99615.94), IJCV 60(2), 2004.
+3. Lowe, D. G. — [*Object recognition from local scale-invariant features*](https://doi.org/10.1109/ICCV.1999.790410), ICCV, 1999.
