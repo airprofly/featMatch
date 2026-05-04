@@ -147,8 +147,8 @@ $$
 
 实现采用 5 层 `nn.Sequential` 流水线：
 
-<a href="docs/images/image.png" target="_blank">
-  <img src="docs/images/image.png" alt="Harris 角点检测流程图" align="center" width="800">
+<a href="docs/images/image2.png" target="_blank">
+  <img src="docs/images/image2.png" alt="Harris 角点检测流程图" align="center" width="800">
 </a>
 
 1. `ImageGradientsLayer` — Sobel 算子计算 $I_x, I_y$
@@ -159,8 +159,8 @@ $$
 
 ### SIFT 描述子
 
-<a href="docs/images/image2.png" target="_blank">
-  <img src="docs/images/image2.png" alt="SIFT 描述子构建示意图" align="center" width="800">
+<a href="docs/images/image.png" target="_blank">
+  <img src="docs/images/image.png" alt="SIFT 描述子构建示意图" align="center" width="800">
 </a>
 
 1. 计算每个像素的梯度幅值和方向
